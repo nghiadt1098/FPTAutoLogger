@@ -132,12 +132,12 @@ begin
      AProcess.Execute;
 
      AStringlist.LoadFromStream(AProcess.Output);
-     if Astringlist.count<9 then result:='disconnected'
+     if Astringlist.count<9 then result:='Not in Wifi'
      else
      if (pos('SSID',AStringlist.Strings[8])<>0) then
         result:=Copy(AStringlist.Strings[8],30,length(AStringlist.Strings[8])-29)
      else
-         result:='disconnected';
+         result:='Not in Wifi';
   finally
      AStringlist.free;
      Aprocess.free;
@@ -310,7 +310,7 @@ begin
  loadPortalData;
 
   if form1.visible=false then
-     if (checkConnection=false) and not (getSSID='disconnected') then
+     if (checkConnection=false) then
          begin
            //Test each portal in list
            for i:=0 to portalList.Count-1 do
