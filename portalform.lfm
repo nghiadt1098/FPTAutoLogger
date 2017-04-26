@@ -1,0 +1,67 @@
+object Form2: TForm2
+  Left = 762
+  Height = 410
+  Top = 220
+  Width = 402
+  Caption = 'Portal Manager'
+  ClientHeight = 410
+  ClientWidth = 402
+  OnCreate = FormCreate
+  OnResize = FormResize
+  LCLVersion = '1.6.2.0'
+  object Button1: TButton
+    Left = 24
+    Height = 35
+    Top = 82
+    Width = 176
+    Caption = 'Add'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Label1: TLabel
+    Left = 24
+    Height = 30
+    Top = 0
+    Width = 97
+    Caption = 'Add Portal'
+    Font.Color = clMenuHighlight
+    Font.Height = 30
+    ParentColor = False
+    ParentFont = False
+  end
+  object Edit1: TEdit
+    Left = 72
+    Height = 28
+    Top = 40
+    Width = 304
+    TabOrder = 1
+  end
+  object Label2: TLabel
+    Left = 24
+    Height = 30
+    Top = 35
+    Width = 37
+    Caption = 'Link'
+    Font.Color = clRed
+    Font.Height = 30
+    ParentColor = False
+    ParentFont = False
+  end
+  object Button2: TButton
+    Left = 200
+    Height = 35
+    Top = 82
+    Width = 176
+    Caption = 'Delete'
+    OnClick = Button2Click
+    TabOrder = 2
+  end
+  object ListBox1: TListBox
+    Left = 24
+    Height = 240
+    Top = 139
+    Width = 352
+    ItemHeight = 0
+    TabOrder = 3
+  end
+end

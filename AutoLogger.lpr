@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Windows,Interfaces, Dialogs, // this includes the LCL widgetset
-  Forms, Main, laz_synapse;
+  Forms, Main, laz_synapse, PortalForm;
 const
   MutexName        = 'AutoLogger';
 resourcestring
@@ -31,9 +31,11 @@ begin
   Application.ShowMainForm:=false;
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TForm2, Form2);
   Application.Run;
   finally
     // release the mutex
     CloseHandle(vMutex);
   end;
 end.
+
