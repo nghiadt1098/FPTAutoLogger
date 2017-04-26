@@ -1,9 +1,0 @@
-V.1.1.0
-  +Add Tray icon.
-  +Now Can Auto Connect Internet thought LAN ( Only Wifi before).
-  +Not start when logon error fixed.
-  
-V.2.0.0
-  +Combine Portal Manager with AutoLogger into one.
-  +No need Installer.
-  +Automatic start when logon.
