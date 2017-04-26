@@ -290,6 +290,7 @@ begin
 
      if FileExists(AppDataPath+'\.account') then
         begin //if it's account already
+             timer1.Enabled:=true;
              form1.hide;
              loadacc;
              LoadPortalData;
