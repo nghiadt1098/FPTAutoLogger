@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, httpsend,base64, process,lclintf,shlobj;
+  ExtCtrls, Buttons, httpsend,base64, process,lclintf, Menus,shlobj;
 const
      cae='ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789!#$%&()[<=?@]^_|0123456789!#$%&()[<=?@]^_|' ;
      flag='CH';
@@ -16,6 +16,8 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    PopupMenu1: TPopupMenu;
+    SystrayIcon: TTrayIcon;
     unametext: TEdit;
     pwordtext: TEdit;
     portaltext: TEdit;
@@ -27,9 +29,12 @@ type
     UnClkBtn: TImage;
     ClkBtn: TImage;
     procedure ClkBtnClick(Sender: TObject);
+    procedure ShowForm(Sender: TObject);
+    procedure Quit(Sender: TObject);
     procedure ClkBtnMouseLeave(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure SystrayIconMouseUp(Sender: TObject; Button: TMouseButton);
     procedure Timer1Timer(Sender: TObject);
     procedure UnClkBtnMouseEnter(Sender: TObject);
   private
@@ -46,7 +51,7 @@ var
   portal:String;
   portalList:Tstringlist;
   nPortal:integer;
-
+  PopupItem:TMenuItem;
 implementation
 
 {$R *.lfm}
@@ -132,7 +137,7 @@ begin
      AProcess.Execute;
 
      AStringlist.LoadFromStream(AProcess.Output);
-     if Astringlist.count<9 then result:='Not in Wifi'
+     if Astringlist.count<9 then result:='Not in Wifi.'
      else
      if (pos('SSID',AStringlist.Strings[8])<>0) then
         result:=Copy(AStringlist.Strings[8],30,length(AStringlist.Strings[8])-29)
@@ -183,7 +188,6 @@ begin
           AStringlist.free;
           Aprocess.free;
      end;
-
 end;
 
 procedure SaveAcc;
@@ -274,10 +278,46 @@ begin
     Form1.height:=image1.height;
 end;
 
+procedure TForm1.SystrayIconMouseUp(Sender: TObject; Button: TMouseButton);
+begin
+    if (Button=mbRight) then
+     systrayicon.PopUpMenu.PopUp;
+end;
+
+procedure TForm1.ShowForm(Sender:TObject);
+begin
+    Form1.show;
+    Systrayicon.hide;
+    timer1.Enabled:=false;
+    if FileExists(AppDataPath+'\.account') then
+       DeleteFile(AppDataPath+'\.account');
+    if FileExists(AppDataPath+'\.portal') then
+       DeleteFile(AppDataPath+'\.portal');
+end;
+
+procedure Tform1.Quit(Sender:TObject);
+begin
+  Systrayicon.Hide;
+  Application.Terminate;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
      //create Appdata folder
      getAppDatapath;
+
+     //Set tray icon
+     systrayicon.PopUpMenu:=PopupMenu1;
+
+      //Set tray Popup menu
+      PopupItem:=TMenuitem.create(Form1);
+      Popupitem.Caption:='Show Login form';
+      popupitem.OnClick:=@ShowForm;
+      popupMenu1.Items.Add(PopupItem);
+      PopupItem:=TMenuitem.create(Form1);
+      Popupitem.Caption:='Quit.';
+      popupitem.OnClick:=@Quit;
+      popupMenu1.Items.Add(PopupItem);
 
      //it can be set in Object Inspector but i put this in here, for sure.
      timer1.Enabled:=false;
@@ -285,13 +325,16 @@ begin
      AppDataPath:=AppDataPath+'\fptudomlogger';
      if not DirectoryExists(AppDataPath) then
         CreateDir(AppDataPath);
-
+     form1.Show;
      label3.caption:=getssid;
 
      if FileExists(AppDataPath+'\.account') then
         begin //if it's account already
              timer1.Enabled:=true;
              form1.hide;
+             //Show tray
+             SystrayIcon.Show;
+             //Load Information
              loadacc;
              LoadPortalData;
         end
@@ -299,6 +342,7 @@ begin
          form1.show;
 
 end;
+
 
 procedure TForm1.Timer1Timer(Sender: TObject);
 var
@@ -375,7 +419,7 @@ begin
                 //Start Automatic mode
                 timer1.Enabled:=true;
                 form1.hide;
-
+                Systrayicon.Show;
            end;
      end
   else
