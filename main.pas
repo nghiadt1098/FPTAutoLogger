@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, httpsend,base64, process,lclintf, Menus,shlobj;
+  ExtCtrls, Buttons, httpsend,base64, process,lclintf, Menus,shlobj,portalForm,
+  ActiveX, ComObj,windows;
 const
      cae='ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789!#$%&()[<=?@]^_|0123456789!#$%&()[<=?@]^_|' ;
      flag='CH';
@@ -34,9 +35,11 @@ type
     procedure ClkBtnMouseLeave(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure OpenPortalManager(Sender:TOBject);
     procedure SystrayIconMouseUp(Sender: TObject; Button: TMouseButton);
     procedure Timer1Timer(Sender: TObject);
     procedure UnClkBtnMouseEnter(Sender: TObject);
+    procedure CloseMenu(sender:TObject);
   private
     { private declarations }
   public
@@ -48,7 +51,7 @@ var
   AppDataPath: Array[0..MaxPathLen] of Char;
   oldssid,SSID:String;
   username,password:String;
-  portal:String;
+  portalMan:String;
   portalList:Tstringlist;
   nPortal:integer;
   PopupItem:TMenuItem;
@@ -221,7 +224,7 @@ var
 begin
   //At first time we need to save the portal list.
     data:=TStringlist.create;
-    data.add(ranencode(portal));
+    data.add(ranencode(portalMan));
     data.savetofile(AppDataPath+'\.portal');
     data.free;
 end;
@@ -235,7 +238,7 @@ begin
 
 end;
 
-function login(portal,unametext,pwordtext:String;data:TMemoryStream):boolean;
+function login(portalMan,unametext,pwordtext:String;data:TMemoryStream):boolean;
 var
     injectString:Ansistring;
 begin
@@ -268,7 +271,7 @@ begin
    +'__csrf_magic=sid%3A208acbaf72d72073e299445c84dd5024ea773674%2C1349414979&'
    +'redirurl=&auth_user='+unametext+'&auth_pass='+pwordtext+'&accept=.';
 
-   result:=HttpPostURL(portal,injectString,data);
+   result:=HttpPostURL(portalMan,injectString,data);
 end;
 
 procedure TForm1.FormResize(Sender: TObject);
@@ -282,6 +285,7 @@ procedure TForm1.SystrayIconMouseUp(Sender: TObject; Button: TMouseButton);
 begin
     if (Button=mbRight) then
      systrayicon.PopUpMenu.PopUp;
+
 end;
 
 procedure TForm1.ShowForm(Sender:TObject);
@@ -290,9 +294,9 @@ begin
     Systrayicon.hide;
     timer1.Enabled:=false;
     if FileExists(AppDataPath+'\.account') then
-       DeleteFile(AppDataPath+'\.account');
+       SysUtils.DeleteFile(AppDataPath+'\.account');
     if FileExists(AppDataPath+'\.portal') then
-       DeleteFile(AppDataPath+'\.portal');
+       SysUtils.DeleteFile(AppDataPath+'\.portal');
 end;
 
 procedure Tform1.Quit(Sender:TObject);
@@ -301,9 +305,50 @@ begin
   Application.Terminate;
 end;
 
-procedure TForm1.FormCreate(Sender: TObject);
+procedure Tform1.OpenPortalManager(sender:TObject);
 begin
-     //create Appdata folder
+      Form2.show;
+end;
+procedure Tform1.CloseMenu(sender:TObject);
+begin
+      popupMenu1.close;
+end;
+
+procedure CreateStartupShortCut(Target, TargetArguments, ShortcutName: string);
+var
+  IObject: IUnknown;
+  ISLink: IShellLink;
+  IPFile: IPersistFile;
+  PIDL: PItemIDList;
+  InFolder: array[0..MAX_PATH] of Char;
+  TargetName: String;
+  LinkName: WideString;
+begin
+  //Creates an instance of IShellLink
+  IObject := CreateComObject(CLSID_ShellLink);
+  ISLink := IObject as IShellLink;
+  IPFile := IObject as IPersistFile;
+
+  ISLink.SetPath(pChar(Target));
+  ISLink.SetArguments(pChar(TargetArguments));
+  ISLink.SetWorkingDirectory(pChar(ExtractFilePath(Target)));
+
+  // Get the desktop location
+  SHGetSpecialFolderLocation(0, CSIDL_STARTUP, PIDL);
+  SHGetPathFromIDList(PIDL, InFolder);
+  LinkName := InFolder + PathDelim + ShortcutName+'.lnk';
+
+  // Create the link
+  IPFile.Save(PWChar(LinkName), false);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+
+begin
+
+  //Create startup shortcut.
+    CreateStartupShortCut(ParamStr(0),'','AutoLogger');
+    //create Appdata folder
      getAppDatapath;
 
      //Set tray icon
@@ -314,9 +359,20 @@ begin
       Popupitem.Caption:='Show Login form';
       popupitem.OnClick:=@ShowForm;
       popupMenu1.Items.Add(PopupItem);
+
+      PopupItem:=TMenuitem.create(Form1);
+      Popupitem.Caption:='Open Portal Manager';
+      popupitem.OnClick:=@OpenPortalManager;
+      popupMenu1.Items.Add(PopupItem);
+
       PopupItem:=TMenuitem.create(Form1);
       Popupitem.Caption:='Quit.';
       popupitem.OnClick:=@Quit;
+      popupMenu1.Items.Add(PopupItem);
+
+      PopupItem:=TMenuitem.create(Form1);
+      Popupitem.Caption:='Close menu';
+      popupitem.OnClick:=@CloseMenu;
       popupMenu1.Items.Add(PopupItem);
 
      //it can be set in Object Inspector but i put this in here, for sure.
@@ -360,8 +416,8 @@ begin
            for i:=0 to portalList.Count-1 do
                  begin
                       temp:=TmemoryStream.create;
-                      portal:=randecode(portalList.Strings[i]);
-                      login(portal,username,password,temp);
+                      portalMan:=randecode(portalList.Strings[i]);
+                      login(portalMan,username,password,temp);
                       temp.free;
                  end;
          end;
@@ -385,7 +441,7 @@ begin
   //Get data from text
   username:=unametext.text;
   password:=pwordtext.text;
-  portal:=portaltext.text;
+  portalMan:=portaltext.text;
 
   //Some effect on event onClick
   image1.Canvas.Pen.Color:=clBlue;
@@ -396,7 +452,7 @@ begin
   statusString:=TStringlist.create;
 
   //login
-  return:=login(portal,username,password,returnStream);
+  return:=login(portalMan,username,password,returnStream);
 
   if return then//If connect success
      begin
@@ -443,3 +499,4 @@ begin
 end;
 
 end.
+
