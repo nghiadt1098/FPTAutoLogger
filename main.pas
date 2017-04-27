@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
   ExtCtrls, Buttons, httpsend,base64, process,lclintf, Menus,shlobj,portalForm,
-  ActiveX, ComObj,windows;
+  ActiveX, ComObj,windows,registry,pingsend;
 const
      cae='ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789!#$%&()[<=?@]^_|0123456789!#$%&()[<=?@]^_|' ;
      flag='CH';
@@ -49,7 +49,8 @@ type
 var
   Form1: TForm1;
   AppDataPath: Array[0..MaxPathLen] of Char;
-  oldssid,SSID:String;
+  SSID:String;
+  isInAlpha:Boolean;
   username,password:String;
   portalMan:String;
   portalList:Tstringlist;
@@ -160,37 +161,14 @@ end;
 
 function checkConnection:boolean;
 var
-  AStringList: TStringList;
-  AProcess: TProcess;
+   return:integer;
 begin
-     //Check connection using ping google.com.vn -w 100 -n 1
-     try
-        AProcess:=TProcess.create(nil);
-        AStringlist:=TStringlist.create();
-        AProcess.Executable:='ping';
-        Aprocess.Parameters.Add('google.com.vn');
-        Aprocess.Parameters.Add('-w');
-        Aprocess.Parameters.Add('100');
-        Aprocess.Parameters.Add('-n');
-        Aprocess.Parameters.Add('1');
-        AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes,poNoConsole];
+     //ping to google.com.vn If error return will get -1
+  checkConnection:=true;
+  return:=pinghost('google.com.vn');
+  if return=-1 then
+      checkConnection:=false
 
-        AProcess.Execute;
-        AStringlist.LoadFromStream(AProcess.Output);
-        if AStringlist.count<3 then checkConnection:=false
-        else
-        if (pos('Request timed out.',AStringlist.Strings[2])<>0) then
-         begin
-         checkConnection:=false;
-         end
-        else
-         begin
-         checkConnection:=true;
-         end;
-     finally
-          AStringlist.free;
-          Aprocess.free;
-     end;
 end;
 
 procedure SaveAcc;
@@ -291,7 +269,7 @@ end;
 procedure TForm1.ShowForm(Sender:TObject);
 begin
     Form1.show;
-    Systrayicon.hide;
+    //Systrayicon.hide;
     timer1.Enabled:=false;
     if FileExists(AppDataPath+'\.account') then
        SysUtils.DeleteFile(AppDataPath+'\.account');
@@ -309,6 +287,7 @@ procedure Tform1.OpenPortalManager(sender:TObject);
 begin
       Form2.show;
 end;
+
 procedure Tform1.CloseMenu(sender:TObject);
 begin
       popupMenu1.close;
@@ -342,9 +321,51 @@ begin
   IPFile.Save(PWChar(LinkName), false);
 end;
 
+Procedure EnableProxy;
+var
+Reg : TRegistry;
+begin
+  try
+     Reg := TRegistry.Create;
+     Reg.RootKey:=HKEY_CURRENT_USER;
+     if not (Reg.OpenKey('\Software\Microsoft\Windows\CurrentVersion\InternetSettings',False)) Then
+        if not Reg.CreateKey('\Software\Microsoft\Windows\CurrentVersion\InternetSettings') then
+    // process here error 1
+       else
+           if not (Reg.OpenKey('\Software\Microsoft\Windows\CurrentVersion\InternetSettings',False)) Then
+      // process here error 2
+         else
+      begin
+        // add your entries
+        Reg.WriteBool('ProxyEnable',True);
+
+      end;
+     Reg.CloseKey;
+  finally
+       Reg.Free;
+  end;
+
+end;
+
+Procedure DisableProxy;
+var
+Reg : TRegistry;
+begin
+  try
+     Reg := TRegistry.Create;
+     Reg.RootKey:=HKEY_CURRENT_USER;
+     Reg.OpenKey('\Software\Microsoft\Windows\CurrentVersion\InternetSettings',False);
+     Reg.WriteBool('ProxyEnable',False);
+     Reg.CloseKey;
+  finally
+     Reg.Free;
+  end;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 
 begin
+   isInAlpha:=false;
 
   //Create startup shortcut.
     CreateStartupShortCut(ParamStr(0),'','AutoLogger');
@@ -399,7 +420,6 @@ begin
 
 end;
 
-
 procedure TForm1.Timer1Timer(Sender: TObject);
 var
    i:integer;
@@ -410,7 +430,8 @@ begin
  loadPortalData;
 
   if form1.visible=false then
-     if (checkConnection=false) then
+   begin
+     if (checkConnection=false) and (isInAlpha=false) then
          begin
            //Test each portal in list
            for i:=0 to portalList.Count-1 do
@@ -421,6 +442,16 @@ begin
                       temp.free;
                  end;
          end;
+     if (getSSID='DH FPT') and (isInAlpha=false) then
+        begin
+            showmessage('You are in Alpha');
+            isInAlpha:=true;
+        end;
+     if (isInAlpha = true ) and (getSSID<>'DH FPT') then
+        begin
+          isinalpha:=false;
+        end;
+   end;
 
 end;
 
