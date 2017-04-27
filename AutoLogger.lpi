@@ -9,6 +9,9 @@
       <Title Value="AutoLogger"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
+      <XPManifest>
+        <DpiAware Value="True"/>
+      </XPManifest>
       <Icon Value="0"/>
     </General>
     <i18n>
@@ -16,7 +19,9 @@
     </i18n>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
+      <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
+      <BuildNr Value="3"/>
       <StringTable CompanyName="CodeHunter" LegalCopyright="GNU v3" LegalTrademarks="GNU v3" ProductName="Wifi Logger" ProductVersion="1.1.0"/>
     </VersionInfo>
     <BuildModes Count="4">

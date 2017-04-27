@@ -276,7 +276,7 @@ begin
   inherited Create;
   FSock := TICMPBlockSocket.Create;
   FSock.Owner := self;
-  FTimeout := 5000;
+  FTimeout := 100;
   FPacketSize := 32;
   FSeq := 0;
   Randomize;
