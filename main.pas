@@ -40,6 +40,8 @@ type
     procedure Timer1Timer(Sender: TObject);
     procedure UnClkBtnMouseEnter(Sender: TObject);
     procedure CloseMenu(sender:TObject);
+    procedure changeAutoStart(sender:TObject);
+
   private
     { private declarations }
   public
@@ -56,6 +58,7 @@ var
   portalList:Tstringlist;
   nPortal:integer;
   PopupItem:TMenuItem;
+  startupPath: Array[0..MaxPathLen] of Char;
 implementation
 
 {$R *.lfm}
@@ -320,6 +323,31 @@ begin
   // Create the link
   IPFile.Save(PWChar(LinkName), false);
 end;
+procedure removeStartupShortcut(Shortcutname:String);
+begin
+  startupPath:='';
+  SHGetSpecialFolderPath(0,startupPath,CSIDL_STARTUP,false);
+  startupPath:=startupPath+'\'+Shortcutname+'.lnk';
+  DeleteFile(startupPath);
+end;
+
+procedure Tform1.changeAutoStart(Sender:TObject);
+var
+  item:TMenuitem;
+begin
+     item:=Tmenuitem(Sender);
+     item.Checked:=not item.Checked;
+
+     if item.checked then
+        begin
+             //Create startup shortcut.
+             CreateStartupShortCut(ParamStr(0),'','AutoLogger');
+        end
+     else
+         begin
+             removeStartupShortcut('AutoLogger');
+         end;
+end;
 
 Procedure EnableProxy;
 var
@@ -387,6 +415,12 @@ begin
       popupMenu1.Items.Add(PopupItem);
 
       PopupItem:=TMenuitem.create(Form1);
+      popupitem.Checked:=true;
+      Popupitem.Caption:='Auto Start when loggon.';
+      popupitem.OnClick:=@changeAutoStart;
+      popupMenu1.Items.Add(PopupItem);
+
+      PopupItem:=TMenuitem.create(Form1);
       Popupitem.Caption:='Quit.';
       popupitem.OnClick:=@Quit;
       popupMenu1.Items.Add(PopupItem);
@@ -395,6 +429,9 @@ begin
       Popupitem.Caption:='Close menu';
       popupitem.OnClick:=@CloseMenu;
       popupMenu1.Items.Add(PopupItem);
+
+      //Show tray
+      SystrayIcon.Show;
 
      //it can be set in Object Inspector but i put this in here, for sure.
      timer1.Enabled:=false;
@@ -409,8 +446,7 @@ begin
         begin //if it's account already
              timer1.Enabled:=true;
              form1.hide;
-             //Show tray
-             SystrayIcon.Show;
+
              //Load Information
              loadacc;
              LoadPortalData;
